@@ -92,6 +92,6 @@ summary(wines_red_data.fit)
 ```{r resplt_rw, fig.pos = 'h', fig.height=12, fig.width=10, fig.align="center", fig.cap="Red Wines - resudual plots"}
 library(car)
 attach(wines_red_data)
-crPlots(wines_red_data.fit)
+crPlots(wines_red_data.fit, layout = c(4,3))
 ```
 
