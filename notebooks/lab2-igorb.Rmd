@@ -22,15 +22,40 @@ When you save the notebook, an HTML file containing the code and output will be 
 
 The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
 
+## Dataset description
 
-Reading red wines dataset
+
+```
+For more information, read [Cortez et al., 2009]. 
+Input variables (based on physicochemical tests): 
+
+1 - fixed acidity        (FA)
+2 - volatile acidity     (VA)
+3 - citric acid          (CA)
+4 - residual sugar       (RS)
+5 - chlorides            (CH)
+6 - free sulfur dioxide  (FSD)
+7 - total sulfur dioxide (TSD)
+8 - density              (DEN)
+9 - pH                   (pH)
+10 - sulphates           (SUL)
+11 - alcohol             (ALC) 
+
+Output variable (based on sensory data): 
+12 - quality (score between 0 and 10) - (QLT)
+```
+
+## Reading red wines dataset
 
 ```{r}
 library(readr)
 wines_red_data <- 
-  read.csv("http://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv", sep=";")
+  read.csv(
+    "http://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv",
+    sep=";", 
+    header = TRUE, 
+    col.names = c("FA","VA","CA","RS","CH","FSD","TSD","DEN","pH","SUL","ALC","QLT"))
 
-head(wines_red_data)
 str(wines_red_data)
 ```
 
@@ -41,40 +66,32 @@ options(xtable.floating = TRUE)
 options(xtable.timestamp = "")
 options(xtable.comment = FALSE)
 
-dh.rescale <- xtable(head(wines_red_data, n=10), 
+dh.rescale <- xtable(head(wines_red_data, n=20), 
   caption = "\\tt Red Wines Quality Dataset (head)", label = "table:dhead10")
-
-print(dh.rescale, scalebox=.75)
-```
-
-```
-For more information, read [Cortez et al., 2009]. 
-Input variables (based on physicochemical tests): 
-
-1 - fixed acidity 
-2 - volatile acidity 
-3 - citric acid 
-4 - residual sugar 
-5 - chlorides 
-6 - free sulfur dioxide 
-7 - total sulfur dioxide 
-8 - density 
-9 - pH 
-10 - sulphates 
-11 - alcohol 
-Output variable (based on sensory data): 
-12 - quality (score between 0 and 10)
+print(dh.rescale, scalebox=1)
 ```
 
 Plot pairwise scatter plots in RStudio and inspect the result for relationships between the independent variable and the numerical dependent variables.
 
-```{r pair_rw, fig.pos = 'h', fig.height=26, fig.width=20, fig.align="center", fig.cap="Red Wines - relationships between variables"}
+```{r pair_rw, fig.pos = 'h', fig.height=12, fig.width=10, fig.align="center", fig.cap="Red Wines - relationships between variables"}
 attach(wines_red_data)
-panel.points<-function(x,y){points(x,y,cex=.25)}
-pairs(~quality + 
-        fixed.acidity + volatile.acidity + citric.acid + 
-        residual.sugar + chlorides + free.sulfur.dioxide + 
-        total.sulfur.dioxide + density + pH + sulphates + alcohol,
-        upper.panel=panel.points,lower.panel=panel.points)
+panel.points<-function(x,y){points(x,y,cex=.1)}
+pairs(~QLT+FA+VA+CA+RS+CH+FSD+TSD+DEN+pH+SUL+ALC,
+      upper.panel=panel.points,lower.panel=panel.points)
+```
+
+## Quick draft - LR estimation
+
+```{r}
+wines_red_data.fit <- lm (QLT ~ ., data=wines_red_data)
+summary(wines_red_data.fit)
+```
+
+## Evaluate Nonlinearity component + residual plot 
+
+```{r resplt_rw, fig.pos = 'h', fig.height=12, fig.width=10, fig.align="center", fig.cap="Red Wines - resudual plots"}
+library(car)
+attach(wines_red_data)
+crPlots(wines_red_data.fit)
 ```
 
