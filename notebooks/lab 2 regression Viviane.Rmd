@@ -1,0 +1,164 @@
+---
+title: "lab 2 Regression Viviane"
+author: "Viviane"
+date: "August 6, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+
+```{r}
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(rpart)
+library(rpart.plot)
+library(Amelia)
+library(rattle)
+library(RColorBrewer)
+library(caret)
+```
+
+## Wine quality dataset
+
+source: http://archive.ics.uci.edu/ml/datasets/Wine+Quality
+
+```
+| class values
+
+quality (score between 0 and 10)
+
+| attributes
+
+fixed acidity
+volatile acidity
+citric acid
+residual sugar
+chlorides
+free sulfur dioxide
+total sulfur dioxide
+density
+pH
+sulphates
+alcohol
+
+```
+
+```{r}
+winequality_red <- read.csv("http://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv", header = TRUE, sep = ";")
+
+```
+
+## Data Set exploration and cleaning
+
+```{r}
+set.seed(77)
+dim(winequality_red)
+head(winequality_red)
+```
+
+### Data structure
+```{r}
+str(winequality_red)
+```
+
+### Data summary
+```{r}
+summary(winequality_red)
+```
+
+
+
+# Checking missing values (missing values or empty values)
+
+```{r}
+colSums(is.na(winequality_red)|winequality_red=='')
+```
+
+#Visualization of missing values
+
+```{r}
+missmap(winequality_red, main="winequality_red - Missings Map",
+        col=c("yellow", "black"))
+```
+
+## Visualize the distribution of quality
+
+```{r}
+winequality_red$quality <- as.factor(winequality_red$quality)
+ggplot(data = winequality_red, mapping = aes(x = quality)) +
+  geom_bar()
+```
+
+
+
+## wine quality based on density
+
+```{r}
+ggplot(winequality_red,aes(density, quality,fill = quality))+
+  geom_boxplot(outlier.colour = "blue", outlier.shape = 1, notch = T)+
+  coord_flip()+
+  ggtitle("wine quality based on density")
+```
+
+
+## wine quality based on density and pH
+
+```{r}
+ggplot(winequality_red,aes(density, pH,fill = quality))+
+  geom_boxplot(outlier.colour = "blue", outlier.shape = 1, notch = F)+
+  coord_flip()+
+  ggtitle("wine quality based on density and pH")
+```
+
+## wine quality based on alcohol
+
+```{r}
+ggplot(winequality_red,aes(alcohol, quality,fill = alcohol))+
+  geom_boxplot(outlier.colour = "blue", outlier.shape = 1, notch = T)+
+  coord_flip()+
+  ggtitle("wine quality based on alcohol")
+```
+
+## wine quality based on density and alcohol
+
+```{r}
+ggplot(winequality_red,aes(alcohol, density, fill = quality))+
+  geom_boxplot(outlier.colour = "blue", outlier.shape = 1, notch = F)+
+  coord_flip()+
+  ggtitle("wine quality based on alcohol and density")
+```
+
+
+## wine quality based on residual sugar and fixed acidity
+
+```{r}
+ggplot(winequality_red,aes(residual.sugar, fixed.acidity, fill = quality))+
+  geom_boxplot(outlier.colour = "blue", outlier.shape = 1, notch = F)+
+  coord_flip()+
+  ggtitle("wine quality based on residual sugar and fixed acidity")
+```
+
+
+ggplot(data = winequality_red, mapping = aes(x = alcohol, fill = quality)) +
+  geom_histogram(binwidth = 5)
+
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
