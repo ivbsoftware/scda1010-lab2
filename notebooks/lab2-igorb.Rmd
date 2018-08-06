@@ -71,27 +71,163 @@ dh.rescale <- xtable(head(wines_red_data, n=20),
 print(dh.rescale, scalebox=1)
 ```
 
-Plot pairwise scatter plots in RStudio and inspect the result for relationships between the independent variable and the numerical dependent variables.
+Plot pairwise scatter plots to inspect the result for relationships between the independent variable and the numerical dependent variables.
 
 ```{r pair_rw, fig.pos = 'h', fig.height=12, fig.width=10, fig.align="center", fig.cap="Red Wines - relationships between variables"}
 attach(wines_red_data)
 panel.points<-function(x,y){points(x,y,cex=.1)}
 pairs(~QLT+FA+VA+CA+RS+CH+FSD+TSD+DEN+pH+SUL+ALC,
       upper.panel=panel.points,lower.panel=panel.points)
+
+```
+## Checking correlation matrix
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, results='asis'}
+cor_rw <- cor(wines_red_data)
+table_cor_rw <- xtable(cor_rw, 
+  caption = "\\tt Red Wines Quality Dataset Correlation Matrix", label = "table:table_cor_rw")
+print(table_cor_rw, scalebox=1)
 ```
 
-## Quick draft - LR estimation
+## Distribution of target value in the dataset
+```{r hist_qlt_rw, fig.pos = 'h', fig.width=6, fig.align="center", fig.cap="Histogram of White Wine QUality"}
+h <- hist(wines_red_data$QLT, freq=FALSE, xlab = "Wine Quality (QLT)", main="", col = colors()[626])
+# plot(density(wines_red_data$pH))
+```
 
+## Default Linear Regression fit
 ```{r}
 wines_red_data.fit <- lm (QLT ~ ., data=wines_red_data)
 summary(wines_red_data.fit)
 ```
-
-## Evaluate Nonlinearity component + residual plot 
-
-```{r resplt_rw, fig.pos = 'h', fig.height=12, fig.width=10, fig.align="center", fig.cap="Red Wines - resudual plots"}
-library(car)
-attach(wines_red_data)
-crPlots(wines_red_data.fit, layout = c(4,3))
+## Adjust the fit removing attributes with p > 0.05
+```{r}
+wines_red_data.fit1 <- lm (QLT ~ . -FA-CA-RS-DEN, data=wines_red_data)
+summary(wines_red_data.fit1)
 ```
 
+## Evaluate Nonlinearity component + residual plot 
+```{r resplt_rw, fig.pos = 'h', fig.height=12, fig.width=10, fig.align="center", fig.cap="Red Wines - resudual plots"}
+library(car)
+# attach(wines_red_data)
+crPlots(wines_red_data.fit1, layout = c(4,3))
+```
+## Assessing Outliers
+```{r}
+outlierTest(wines_red_data.fit) # Bonferonni p-value for most extreme obs
+```
+```{r qq_regr_rw, echo=TRUE, fig.align="center", fig.cap="QQ Plot", fig.pos='h', fig.width=6, message=FALSE, warning=FALSE}
+qqPlot(wines_red_data.fit, main="")  #qq plot for studentized resid 
+```
+
+```{r levr_rw, fig.pos = 'h', fig.height=12, fig.width=10, fig.align="center", fig.cap="Red Wines - Leverage Plots"}
+# leverage plots
+leveragePlots(wines_red_data.fit, layout = c(4,3), main = "")
+```
+
+
+```{r}
+# Test for Autocorrelated Errors
+durbinWatsonTest(wines_red_data.fit)
+
+```
+```{r}
+# Global test of model assumptions
+library(gvlma)
+gvmodel <- gvlma(wines_red_data.fit1) 
+summary(gvmodel)
+```
+
+# Stepwise Regression
+## Find the best model automatically
+```{r message=FALSE, warning=FALSE}
+# Stepwise Regression
+library(MASS)
+fit <- lm(QLT ~ .,data=wines_red_data)
+step <- stepAIC(fit, direction="both")
+step$anova # display results
+```
+## Evaluate auto model
+```{r}
+wines_red_data.fit2 <- lm (QLT ~ VA + CH + FSD + TSD + pH + SUL + ALC, data=wines_red_data)
+summary(wines_red_data.fit2)
+```
+The model identical to the one found the the previous section
+
+# Tree-based regression models
+## Splitting the dataset into train and test
+The dataset has been split in such a way that train and test sets would have the same distribution of the 'QLT' attribute. The reason for this stratification strategy is to focus on the priority on the target value. We used 70:30 split ratio. 
+
+```{r message=FALSE, warning=FALSE}
+library(caret)
+train.rows<- createDataPartition(y= wines_red_data$QLT, p=0.7, list = FALSE)
+train.data<- wines_red_data[train.rows,]
+prop.table((table(train.data$QLT)))
+```
+
+```{r}
+test.data<- wines_red_data[-train.rows,]
+prop.table((table(test.data$QLT)))
+```
+
+## Regression tree fit
+
+```{r dtree, fig.pos='h', fig.width=8, fig.align="center", fig.cap="Regression Tree Diagram", message=FALSE, warning=FALSE}
+library(rpart)
+library(rpart.plot)
+library(rattle)
+library(caret)
+
+reg.tree <- rpart(QLT ~ ., method="anova", data = train.data)
+fancyRpartPlot(reg.tree, main="", sub="")
+```
+```{r}
+reg.tree$variable.importance
+```
+
+## Decision Tree model evaluation
+This Decision Tree favours the following attributes in order of their importance for the prediction of the target attribute: health, has_nurs, parents. It does not consider the rest of the attributes as important. Let's apply the model to the test set and evaluate accuracy of the predictions. 
+
+```{r }
+dtPrediction <- predict(reg.tree, test.data)
+cor(dtPrediction,test.data$QLT)
+```
+
+```{r plot_rt_rw, fig.pos='h', fig.width=10, fig.align="center", message=FALSE, warning=FALSE, paged.print=FALSE, fig.cap="Regression Tree Prediction"}
+plot(jitter(test.data$QLT), dtPrediction, 
+     pch=20, col=rgb(0.1, 0.2, 0.8, 0.3), 
+     ylab="Prediction", xlab="Test Values", bty="n" )
+```
+
+```{r qq_rt_rw, fig.pos='h', fig.width=10, fig.align="center", message=FALSE, warning=FALSE, paged.print=FALSE, fig.cap="Regression Tree Prediction QQ Plot"}
+qqPlot(dtPrediction, main="")
+```
+
+## Random Forest model fit
+
+```{r message=FALSE, warning=FALSE}
+library(randomForest)
+fitRF1 <- randomForest(
+  QLT ~ ., method="anova",
+  data=train.data, importance=TRUE, ntree=2000)
+```
+
+```{r forimp, fig.pos='h', fig.width=8, fig.align="center", message=FALSE, warning=FALSE, paged.print=FALSE, fig.cap="Importance of the dataset attributes for the prediction of the 'class' attribute"}
+varImpPlot(fitRF1, main="")
+```
+\newpage
+## Random Forest model prediction and evaluation
+
+```{r}
+PredictionRF1 <- predict(fitRF1, test.data)
+cor(PredictionRF1,test.data$QLT)
+```
+
+```{r plot_rf_rw, fig.pos='h', fig.width=10, fig.align="center", message=FALSE, warning=FALSE, paged.print=FALSE, fig.cap="Random Forest Prediction"}
+plot(jitter(test.data$QLT), PredictionRF1 , 
+     pch=20, col=rgb(0.1, 0.2, 0.8, 0.3), 
+     ylab="Prediction", xlab="Test Values", bty="n" )
+```
+
+```{r qq_rf_rw, fig.pos='h', fig.width=10, fig.align="center", message=FALSE, warning=FALSE, paged.print=FALSE, fig.cap="Random Forest Prediction QQ Plot"}
+qqPlot(PredictionRF1, main="")
+```
