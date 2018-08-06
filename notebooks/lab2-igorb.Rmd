@@ -11,6 +11,7 @@ This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute
 Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
 
 ```{r}
+set.seed(42)
 library(ggplot2)
 library(reshape2)
 library(plyr)
@@ -230,4 +231,63 @@ plot(jitter(test.data$QLT), PredictionRF1 ,
 
 ```{r qq_rf_rw, fig.pos='h', fig.width=10, fig.align="center", message=FALSE, warning=FALSE, paged.print=FALSE, fig.cap="Random Forest Prediction QQ Plot"}
 qqPlot(PredictionRF1, main="")
+```
+## Imballanced Dataset Correction
+
+Original distribution of QLT in the train data
+```{r}
+prop.table((table(train.data$QLT)))
+```
+
+Corresting QLT = 3
+```{r}
+vr <- train.data[train.data[,"QLT"] == 3, ]
+train2.data <- train.data
+for (i in 1:30) {
+  train2.data <- rbind(train2.data, vr)  
+}
+
+```
+Corresting QLT = 4
+```{r}
+vr <- train.data[train.data[,"QLT"] == 4, ]
+for (i in 1:10) {
+  train2.data <- rbind(train2.data, vr)  
+}
+```
+Corresting QLT = 8
+```{r}
+vr <- train.data[train.data[,"QLT"] == 8, ]
+for (i in 1:16) {
+  train2.data <- rbind(train2.data, vr)  
+}
+```
+Updated set QLT distribution
+```{r}
+prop.table((table(train2.data$QLT)))
+```
+
+Testing corrected training data prediction
+
+
+```{r message=FALSE, warning=FALSE}
+library(randomForest)
+fitRF2 <- randomForest(
+  QLT ~ ., method="anova",
+  data=train2.data, importance=TRUE, ntree=500)
+```
+
+```{r}
+PredictionRF2 <- predict(fitRF2, test.data)
+cor(PredictionRF2,test.data$QLT)
+```
+
+```{r plot_rf_rw, fig.pos='h', fig.width=10, fig.align="center", message=FALSE, warning=FALSE, paged.print=FALSE, fig.cap="Random Forest Prediction"}
+plot(jitter(test.data$QLT), PredictionRF2 , 
+     pch=20, col=rgb(0.1, 0.2, 0.8, 0.3), 
+     ylab="Prediction", xlab="Test Values", bty="n" )
+```
+
+```{r qq_rf_rw, fig.pos='h', fig.width=10, fig.align="center", message=FALSE, warning=FALSE, paged.print=FALSE, fig.cap="Random Forest Prediction QQ Plot"}
+qqPlot(PredictionRF2, main="")
 ```
