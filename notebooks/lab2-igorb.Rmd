@@ -17,14 +17,23 @@ library(reshape2)
 library(plyr)
 ```
 
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+# Plan
 
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+## OLS
 
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
-
+ * Put all relevant variables in the model
+ * Leavethe irrelevant variables out
+ * Check linearity
+ * Regression assumptions
+  ** Residuals have a mean of zero
+  ** Normality of errors
+  ** Residuals are not autocorrelated
+  ** Linearityvariables
+  ** Need more data than 
+  ** No excessive collinearity
+ 
+ 
 ## Dataset description
-
 
 ```
 For more information, read [Cortez et al., 2009]. 
@@ -100,25 +109,46 @@ h <- hist(wines_red_data$QLT, freq=FALSE, xlab = "Wine Quality (QLT)", main="", 
 wines_red_data.fit <- lm (QLT ~ ., data=wines_red_data)
 summary(wines_red_data.fit)
 ```
+## More detailed summaries
+
+```{r levr1_rw, fig.pos = 'h', fig.width=8, fig.align="center", fig.cap="HIstogram of residuals"}
+hist(residuals(wines_red_data.fit), xlab = "Residuals", main = "")
+```
+
+
 ## Adjust the fit removing attributes with p > 0.05
 ```{r}
 wines_red_data.fit1 <- lm (QLT ~ . -FA-CA-RS-DEN, data=wines_red_data)
 summary(wines_red_data.fit1)
 ```
+# Stepwise Regression
+## Find the best model automatically
+```{r message=FALSE, warning=FALSE}
+# Stepwise Regression
+library(MASS)
+fit <- lm(QLT ~ .,data=wines_red_data)
+step <- stepAIC(fit, direction="both", trace = FALSE)
+step$anova # display results
+```
+
+The model identical to the one found the the previous section
 
 ## Evaluate Nonlinearity component + residual plot 
 ```{r resplt_rw, fig.pos = 'h', fig.height=12, fig.width=10, fig.align="center", fig.cap="Red Wines - resudual plots"}
 library(car)
-# attach(wines_red_data)
 crPlots(wines_red_data.fit1, layout = c(4,3))
 ```
 ## Assessing Outliers
 ```{r}
 outlierTest(wines_red_data.fit) # Bonferonni p-value for most extreme obs
 ```
+Both p-value and Bonferroni-corrected p-value are smaller that 0.05, so the model is acceptable.
+
 ```{r qq_regr_rw, echo=TRUE, fig.align="center", fig.cap="QQ Plot", fig.pos='h', fig.width=6, message=FALSE, warning=FALSE}
 qqPlot(wines_red_data.fit, main="")  #qq plot for studentized resid 
 ```
+
+A residual plot is a graph that shows the residuals on the vertical axis and the independent variable on the horizontal axis. If the points in a residual plot are randomly dispersed around the horizontal axis, a linear regression model is appropriate for the data; otherwise, a non-linear model is more appropriate. Our model is reasonably dispersed around 0,0 for each of the independent variables <ref>
 
 ```{r levr_rw, fig.pos = 'h', fig.height=12, fig.width=10, fig.align="center", fig.cap="Red Wines - Leverage Plots"}
 # leverage plots
@@ -138,21 +168,21 @@ gvmodel <- gvlma(wines_red_data.fit1)
 summary(gvmodel)
 ```
 
-# Stepwise Regression
-## Find the best model automatically
-```{r message=FALSE, warning=FALSE}
-# Stepwise Regression
-library(MASS)
-fit <- lm(QLT ~ .,data=wines_red_data)
-step <- stepAIC(fit, direction="both")
-step$anova # display results
-```
-## Evaluate auto model
+# Addressing Skeweness using log transformation
+
 ```{r}
-wines_red_data.fit2 <- lm (QLT ~ VA + CH + FSD + TSD + pH + SUL + ALC, data=wines_red_data)
-summary(wines_red_data.fit2)
+library(car)
+summary(wines_red_data.fit2 <- lm (bcPower(QLT,1.25)  ~ . -FA-CA-RS-DEN, data=wines_red_data))
+gvmodel <- gvlma(wines_red_data.fit2) 
+summary(gvmodel)
 ```
-The model identical to the one found the the previous section
+
+
+```{r levr2_rw, fig.pos = 'h', fig.width=8, fig.align="center", fig.cap="HIstogram of residuals after correcting the Skewness"}
+hist(residuals(wines_red_data.fit2), xlab = "Residuals", main = "")
+```
+
+
 
 # Tree-based regression models
 ## Splitting the dataset into train and test
@@ -160,7 +190,7 @@ The dataset has been split in such a way that train and test sets would have the
 
 ```{r message=FALSE, warning=FALSE}
 library(caret)
-train.rows<- createDataPartition(y= wines_red_data$QLT, p=0.7, list = FALSE)
+train.rows<- createDataPartition(y= wines_red_data$QLT, p=0.6, list = FALSE)
 train.data<- wines_red_data[train.rows,]
 prop.table((table(train.data$QLT)))
 ```
@@ -184,6 +214,11 @@ fancyRpartPlot(reg.tree, main="", sub="")
 ```{r}
 reg.tree$variable.importance
 ```
+
+
+
+
+
 
 ## Decision Tree model evaluation
 This Decision Tree favours the following attributes in order of their importance for the prediction of the target attribute: health, has_nurs, parents. It does not consider the rest of the attributes as important. Let's apply the model to the test set and evaluate accuracy of the predictions. 
@@ -243,7 +278,7 @@ Corresting QLT = 3
 ```{r}
 vr <- train.data[train.data[,"QLT"] == 3, ]
 train2.data <- train.data
-for (i in 1:30) {
+for (i in 1:20) {
   train2.data <- rbind(train2.data, vr)  
 }
 
@@ -251,14 +286,14 @@ for (i in 1:30) {
 Corresting QLT = 4
 ```{r}
 vr <- train.data[train.data[,"QLT"] == 4, ]
-for (i in 1:10) {
+for (i in 1:3) {
   train2.data <- rbind(train2.data, vr)  
 }
 ```
 Corresting QLT = 8
 ```{r}
 vr <- train.data[train.data[,"QLT"] == 8, ]
-for (i in 1:16) {
+for (i in 1:10) {
   train2.data <- rbind(train2.data, vr)  
 }
 ```
@@ -282,12 +317,12 @@ PredictionRF2 <- predict(fitRF2, test.data)
 cor(PredictionRF2,test.data$QLT)
 ```
 
-```{r plot_rf_rw, fig.pos='h', fig.width=10, fig.align="center", message=FALSE, warning=FALSE, paged.print=FALSE, fig.cap="Random Forest Prediction"}
+```{r plot_rf1_rw, fig.pos='h', fig.width=10, fig.align="center", message=FALSE, warning=FALSE, paged.print=FALSE, fig.cap="Random Forest Prediction"}
 plot(jitter(test.data$QLT), PredictionRF2 , 
      pch=20, col=rgb(0.1, 0.2, 0.8, 0.3), 
      ylab="Prediction", xlab="Test Values", bty="n" )
 ```
 
-```{r qq_rf_rw, fig.pos='h', fig.width=10, fig.align="center", message=FALSE, warning=FALSE, paged.print=FALSE, fig.cap="Random Forest Prediction QQ Plot"}
+```{r qq_rf2_rw, fig.pos='h', fig.width=10, fig.align="center", message=FALSE, warning=FALSE, paged.print=FALSE, fig.cap="Random Forest Prediction QQ Plot"}
 qqPlot(PredictionRF2, main="")
 ```
