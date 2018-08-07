@@ -46,7 +46,7 @@ are complex and still not fully understood \citep{legin_evaluation_2003}.
 
 ## Background
 
-The two datasets are related to red and white variants of the Portuguese "Vinho Verde" wine. For more details, consult \citep{CorCer09}. Due to privacy and logistic issues, only physicochemical (inputs) and sensory (the output) variables are available (e.g. there is no data about grape types, wine brand, wine selling price, etc.).
+The two datasets presented in \citep{WineDataset} are related to red and white variants of the Portuguese "Vinho Verde" wine. For more details, consult \citep{CorCer09}. Due to privacy and logistic issues, only physicochemical (inputs) and sensory (the output) variables are available (e.g. there is no data about grape types, wine brand, wine selling price, etc.).
 
 These datasets can be viewed as classification or regression tasks. The classes are ordered and not balanced (e.g. there are munch more normal wines than excellent or poor ones). Outlier detection algorithms could be used to detect the few excellent or poor wines. Also, we are not sure if all input variables are relevant.
 
@@ -54,41 +54,41 @@ Due to specific purpose of this lab assignment, we are looking at  Linear Regres
 
 ## Objective
 
-The objective of this article is to provide a reliable and feasible recommendation algorithm to predict wine quality based on physicochemical tests.
+The objective of this article is to provide a reliable and feasible recommendation algorithm to predict wine quality based on physicochemical tests.  The target value is a numeric value of wine 'quality', hence the task could be solved by Linear Regression methods. The following 'methodology'check list' standard for a Linear Regression tasks will be applied to the problem at hand:
 
  * Put all relevant variables in the model
- * Leavethe irrelevant variables out
+ * Leave the irrelevant variables out
  * Check linearity
- * Regression assumptions
+ * Check regression assumptions:
  
-  ** Residuals have a mean of zero
-  ** Normality of errors
-  ** Residuals are not autocorrelated
-  ** Linearityvariables
-  ** Need more data than 
-  ** No excessive collinearity
+    - Residuals have a mean of zero
+    - Normality of errors
+    - Residuals are not autocorrelated
+    - Linearity of variables
+    - More data than independent variables is used in model building
+    - No excessive collinearity
 
-
+\newpage
 # Data understanding
-The dataset \citep{WineDataset} has 8 attributes and 12960 instances. The following concept structure:
+The dataset \citep{WineDataset} of red wine quality has 12 attributes and 1599 instances. For more information, read \citep{CorCer09}. The following is the concept structure of the dataset:
 
 ```
-For more information, read [Cortez et al., 2009]. 
 Input variables (based on physicochemical tests): 
 
-1 - fixed acidity 
-2 - volatile acidity 
-3 - citric acid 
-4 - residual sugar 
-5 - chlorides 
-6 - free sulfur dioxide 
-7 - total sulfur dioxide 
-8 - density 
-9 - pH 
-10 - sulphates 
-11 - alcohol 
+1 - fixed acidity        (FA)
+2 - volatile acidity     (VA)
+3 - citric acid          (CA)
+4 - residual sugar       (RS)
+5 - chlorides            (CH)
+6 - free sulfur dioxide  (FSD)
+7 - total sulfur dioxide (TSD)
+8 - density              (DEN)
+9 - pH                   (pH)
+10 - sulphates           (SUL)
+11 - alcohol             (ALC) 
+
 Output variable (based on sensory data): 
-12 - quality (score between 0 and 10)
+12 - quality (score between 0 and 10) - (QLT)
 ```
 
 ## Preparation
@@ -105,47 +105,62 @@ library(caret)
 
 ## Reading red wines dataset
 
+The dataset was loaded directly from the site \citep{WineDataset} using the R statement below. Note that column names were assigned as the dataset headers had long name making it inconvinient to present it in tables and charts. Corresponence of variable codes to long names is shown in the [previous section](#data-understanding).
+
 ```{r}
 library(readr)
-wines_red_data <- 
-  read.csv(
-    "http://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv",
-    sep=";", 
-    header = TRUE, 
-    col.names = c("FA","VA","CA","RS","CH","FSD","TSD","DEN","pH","SUL","ALC","QLT"))
-
-str(wines_red_data)
+wines_red_data <- read.csv(
+ "http://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv",
+ sep=";", header = TRUE, 
+ col.names = c("FA","VA","CA","RS","CH","FSD","TSD","DEN","pH","SUL","ALC","QLT"))
 ```
 
+## Check for missing values
+The dataset has no missing values. Code below calculate number of worw with missing values and checks if there is at list one.
+```{r}
+any(is.na(wines_red_data))
+```
+
+\newpage
+## Preview of the data
+To pretty-print the first 20 rows of the dataset xtable \citep{R-xtable} library was used to generate Table \ref{table:dhead10}.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, results='asis'}
 library(xtable)
-options(xtable.floating = TRUE)
-options(xtable.timestamp = "")
-options(xtable.comment = FALSE)
-
-dh.rescale <- xtable(head(wines_red_data, n=20), 
+xtable(head(wines_red_data, n=20), 
   caption = "\\tt Red Wines Quality Dataset - first 20 rows", label = "table:dhead10")
-print(dh.rescale, scalebox=1)
 ```
 
 ## Distribution of target value in the dataset
-Figure \ref{fig:hist_qlt_rw}:
+As we mentione before, the target value QLT of the wine quality is not equaly distributed. The Figure \ref{fig:hist_qlt_rw} demonstrates the distribution. As we can see, dataset covers medium-quality wines with QLT between 5 and 7 well, low and high  quality wines represented poorly.
 
-```{r hist_qlt_rw, fig.pos = 'h', fig.width=6, fig.align="center", fig.cap="Histogram of White Wine QUality"}
-h <- hist(wines_red_data$QLT, freq=FALSE, xlab = "Wine Quality (QLT)", main="",
-    col = colors()[626])
+```{r hist_qlt_rw, fig.pos = 'h', fig.height=3, fig.width=5, fig.align="center", fig.cap="DIstribution of Wine QUality Attribute"}
+ggplot(data = wines_red_data, mapping = aes(x = QLT)) + geom_bar()
 ```
-
+\newpage
 # OLS Modeling
 ## Default Linear Regression fit
 The following code calculates the default OLS model using all the indepedent variables. Results of the calculatiions presented in Table \ref{table:fit1}.
-```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, results='asis'}
+```{r echo=TRUE, warning=FALSE, results = 'hide'}
 wines_red_data.fit <- lm (QLT ~ ., data=wines_red_data)
-# summary(wines_red_data.fit)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, results='asis'}
+options(xtable.floating = TRUE)
+options(xtable.timestamp = "")
+options(xtable.comment = FALSE)
 xtable(wines_red_data.fit, 
   caption = "\\tt Default OLS model - all variables included", label = "table:fit1")
 ```
+```{r echo=TRUE}
+summary(wines_red_data.fit)
+fit.sum <- summary(wines_red_data.fit)
+
+```
+ 
+ * Multiple R-squared: `r fit.sum["r.squared"]` 
+ * Adjusted R-squared: `r fit.sum["adj.r.squared"]` 
+
 ## More detailed summaries
 
 ```{r levr1_rw, fig.pos = 'h', fig.width=5, fig.align="center", fig.cap="HIstogram of residuals"}
