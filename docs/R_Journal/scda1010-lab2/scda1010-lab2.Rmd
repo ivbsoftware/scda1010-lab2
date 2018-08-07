@@ -140,50 +140,44 @@ ggplot(data = wines_red_data, mapping = aes(x = QLT)) + geom_bar()
 \newpage
 # OLS Modeling
 ## Default Linear Regression fit
-The following code calculates the default OLS model using all the indepedent variables. Results of the calculatiions presented in Table \ref{table:fit1}.
-```{r echo=TRUE, warning=FALSE, results = 'hide'}
+The following code calculates the default OLS model using all the indepedent variables. Results of the calculatiions presented below.
+```{r echo=TRUE, warning=FALSE}
 wines_red_data.fit <- lm (QLT ~ ., data=wines_red_data)
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, results='asis'}
-options(xtable.floating = TRUE)
-options(xtable.timestamp = "")
-options(xtable.comment = FALSE)
-xtable(wines_red_data.fit, 
-  caption = "\\tt Default OLS model - all variables included", label = "table:fit1")
-```
-```{r echo=TRUE}
-summary(wines_red_data.fit)
 fit.sum <- summary(wines_red_data.fit)
-
-```
- 
- * Multiple R-squared: `r fit.sum["r.squared"]` 
- * Adjusted R-squared: `r fit.sum["adj.r.squared"]` 
-
-## More detailed summaries
-
-```{r levr1_rw, fig.pos = 'h', fig.width=5, fig.align="center", fig.cap="HIstogram of residuals"}
-hist(residuals(wines_red_data.fit), xlab = "Residuals", main = "")
+fit.sum
 ```
 
 ## Adjust the fit removing attributes with p > 0.05
+As we can see, Adjusted R-squared is pretty low at `r fit.sum["adj.r.squared"]`. In addition several varibles, like FA, CA, RS, and DEN
+have shown to be not significant at p > 0.05. Let's remove them from the model and check if this helps increase the model reliabiliry.
+
 ```{r}
 wines_red_data.fit1 <- lm (QLT ~ VA + CH + FSD + TSD + pH + SUL + ALC,
                            data=wines_red_data)
-summary(wines_red_data.fit1)
+fit1.sum <- summary(wines_red_data.fit1)
+fit1.sum
 ```
-# Stepwise Regression
-## Find the best model automatically
+
+As we can see, the reliability of the new model slightly inreased. We now have Adjusted R-squared at `r fit1.sum["adj.r.squared"]` comparing to previous `r fit.sum["adj.r.squared"]`
+
+## Stepwise Regression
+Stepwise Regression method allows to find the best regression model automatically. Code below searches for the best fit iterating through the combination of the independent variables to find the best fit. As we see from the algorithm output the new  model is identical to the one found the the previous section.
+
 ```{r message=FALSE, warning=FALSE}
-# Stepwise Regression
 library(MASS)
 fit <- lm(QLT ~ .,data=wines_red_data)
 step <- stepAIC(fit, direction="both", trace = FALSE)
-step$anova # display results
+step$anova
 ```
 
-The model identical to the one found the the previous section
+# Analisys of the model
+
+The code below generates a histogram of residuals \ref{fig:levr1_rw} for the OLS model hew have so far. From the chart we can say that the
+resulting histogram is skewed. This should be addressed later.
+
+```{r levr1_rw, fig.align="center", fig.cap="Histogram of Residual Errors", fig.height=3, fig.pos='h', fig.width=5, message=FALSE, warning=FALSE}
+hist(residuals(wines_red_data.fit1), xlab = "", main = "")
+```
 
 ## Plot pairwise scatter plots
 Pairwise scatter plots \ref{fig:pair_rw}  to inspect the result for relationships between the independent variable and the numerical dependent variables.
@@ -197,6 +191,9 @@ pairs(~QLT + VA + CH + FSD + TSD + pH + SUL + ALC,
 
 ## Checking correlation matrix
 ```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, results='asis'}
+options(xtable.floating = TRUE)
+options(xtable.timestamp = "")
+options(xtable.comment = FALSE)
 cor_rw <- cor(wines_red_data)
 table_cor_rw <- xtable(cor_rw, 
   caption = "\\tt Red Wines Quality Dataset Correlation Matrix", label = "table:table_cor_rw")
@@ -204,7 +201,7 @@ print(table_cor_rw, scalebox=.9)
 ```
 
 ## Evaluate Nonlinearity component + residual plot 
-```{r resplt_rw, fig.width=5.5, fig.height=8, fig.align="center", fig.cap="Red Wines - Component + Resudual Plots"}
+```{r resplt_rw, fig.align="center", fig.cap="Component + Resuduals Plot", fig.height=9, fig.width=6, message=FALSE, warning=FALSE}
 library(car)
 crPlots(wines_red_data.fit1, layout = c(4,3), main = "")
 ```
