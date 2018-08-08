@@ -352,9 +352,13 @@ qqPlot(dtPrediction, main="" )
 In addition we generated a visual representation of the RT method prediction using a scatter plot in Figure \ref{fig:plot_rt_rw}.
 
 ```{r plot_rt_rw, fig.width=5.5, fig.align="center", message=FALSE, warning=FALSE, paged.print=FALSE, fig.cap="Regression Tree Prediction"}
-plot(jitter(test.data$QLT), dtPrediction, 
-     pch=20, col=rgb(0.1, 0.2, 0.8, 0.3), 
-     ylab="Prediction", xlab="Test Values", bty="n" )
+library(ggplot2)
+df1 = data.frame(as.factor(test.data$QLT), dtPrediction)
+colnames(df1) <- c("Test","Prediction")
+ggplot(df1, aes(x = Test, y = Prediction)) +
+        geom_boxplot() + geom_boxplot() +
+        geom_jitter(width = 0.25, pch=20, col=rgb(0.1, 0.2, 0.8, 0.3), 
+                    ylab="Prediction", xlab="Test Values")
 ```
 
 \newpage
@@ -391,9 +395,13 @@ cor(PredictionRF1,test.data$QLT)
 To visualize the results of the predictions, the code below generates a scatter plot of the Predictor vs Test values (Figure \ref{fig:plot_rf_rw}). Also a QQ-Plot for Studentized Residuals is generated and presented in Figure \ref{fig:qq_rf_rw}.
 
 ```{r plot_rf_rw, fig.width=5.5, fig.align="center", message=FALSE, warning=FALSE, paged.print=FALSE, fig.cap="Random Forest Prediction"}
-plot(jitter(test.data$QLT), PredictionRF1 , 
-     pch=20, col=rgb(0.1, 0.2, 0.8, 0.3), 
-     ylab="Prediction", xlab="Test Values", bty="n" )
+library(ggplot2)
+df2 = data.frame(as.factor(test.data$QLT), PredictionRF1)
+colnames(df2) <- c("Test","Prediction")
+ggplot(df2, aes(x = Test, y = Prediction)) +
+        geom_boxplot() + geom_boxplot() +
+        geom_jitter(width = 0.25, pch=20, col=rgb(0.1, 0.2, 0.8, 0.3), 
+                    ylab="Prediction", xlab="Test Values")
 ```
 
 ```{r qq_rf_rw, fig.width=5.5, fig.align="center", message=FALSE, warning=FALSE, paged.print=FALSE, fig.cap="Random Forest Prediction QQ Plot"}
