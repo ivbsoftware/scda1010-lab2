@@ -400,4 +400,4 @@ The project was a success.
 \bibliography{RJreferences}
 
 # Note from the Authors
-This file was generated using [_The R Journal_ style article template](https://github.com/rstudio/rticles), additional information on how to prepare articles for submission is here - [Instructions for Authors](https://journal.r-project.org/share/author-guide.pdf). The article itself is an executable R Markdown file that could be [downloaded from Github](https://github.com/ivbsoftware/scda1010-lab1/tree/master/docs/R_Journal/csda1010-lab1lab1) with all the necessary artifacts.
+This file was generated using [_The R Journal_ style article template](https://github.com/rstudio/rticles), additional information on how to prepare articles for submission is here - [Instructions for Authors](https://journal.r-project.org/share/author-guide.pdf). The article itself is an executable R Markdown file that could be [downloaded from Github](https://github.com/ivbsoftware/scda1010-lab2/tree/master/docs/R_Journal/scda1010-lab2) with all the necessary artifacts.
