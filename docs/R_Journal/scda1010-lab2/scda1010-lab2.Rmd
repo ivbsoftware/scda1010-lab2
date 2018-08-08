@@ -132,6 +132,7 @@ xtable(head(wines_red_data, n = 10),
 
 ## Data attributes summary
 Quick view of the data attributes statistics presented in the Table \ref{table:sum_rw}. For each attribute in the dataset this table shows min, max, mean and normal distribution 1st and 3rd quartiles values.
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, results='asis'}
 print(xtable(summary(wines_red_data[,1:6])), include.rownames = FALSE, scalebox=.9)
 print(xtable(summary(wines_red_data[,7:12]), 
@@ -141,6 +142,7 @@ print(xtable(summary(wines_red_data[,7:12]),
 
 ## Check for missing values
 The dataset has no missing values. Code below calculate number of rows with missing values and checks if there is at list one.
+
 ```{r}
 any(is.na(wines_red_data))
 ```
@@ -154,9 +156,10 @@ ggplot(data = wines_red_data, mapping = aes(x = QLT)) + geom_bar()
 
 \newpage
 
-# OLS Modeling
+# Linear Regression Modeling
 ## Default Linear Regression fit
-The following code calculates the default OLS model using all the independent variables. Results of the calculations and analysis are presented below.
+The following code calculates the default Ordinary Least Squares (OLS) model using all the independent variables. Results of the calculations and analysis are presented below.
+
 ```{r echo=TRUE, warning=FALSE}
 wines_red_data.fit <- lm (QLT ~ ., data=wines_red_data)
 fit.sum <- summary(wines_red_data.fit)
@@ -176,7 +179,8 @@ As we can see, Adjusted R-squared is pretty low at `r fit.sum["adj.r.squared"]`.
 \newpage
 
 ## Adjusting the model
-Let's remove them from the model and check if this helps increase the model reliability.
+Let's remove the unsignificant attributes FA, CA, RS, and DEN from the model and check if this helps to increase the model reliability.
+
 ```{r}
 wines_red_data.fit1 <- lm (QLT ~ VA + CH + FSD + TSD + pH + SUL + ALC,
                            data=wines_red_data)
@@ -187,6 +191,7 @@ As we can see, the reliability of the new model slightly increased. We now have 
 
 ## Stepwise Regression
 Stepwise Regression method starts with the full model and eliminates predictors one at a time, at each step considering whether the criterion will be improved. As we see from the algorithm output, the new  model is identical to the one found the previous section manually.
+
 ```{r message=FALSE, warning=FALSE}
 library(MASS)
 fit <- lm(QLT ~ .,data=wines_red_data)
@@ -195,11 +200,11 @@ step$anova
 ```
 \newpage
 
-# Analysis of the final OLS model
+# Analysis of the final Linear Regression model
 ## Checking intercolliearity of the model
-To estimate intercollinearity of the model we start with generating  correlation matrix of our dataset attributes included in the final model. This is presented in Table \ref{table:table_cor_rw}. To present the same information graphically, we generate pairwise scatter plots (Figure \ref{fig:pair_rw}). 
+To estimate intercollinearity of the model we start with generating  correlation matrix of our dataset attributes included in the final model. This is presented in Table \ref{table:table_cor_rw}. 
 
-The analysis show that attributes FSD and TSD have noticeable correlation at 0.67. This should be tested and fixed is necessary.
+To present the same information graphically, we generate pairwise scatter plots (Figure \ref{fig:pair_rw}). The analysis show that attributes FSD and TSD have noticeable correlation at 0.67. This should be tested and fixed is necessary.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, results='asis'}
 options(xtable.floating = TRUE)
@@ -212,8 +217,8 @@ print(table_cor_rw, scalebox=1)
 ```
 
 ## Checking model skewness
-The code below generates a histogram of residuals \ref{fig:levr1_rw} for the OLS model that have so far. From the chart we can say that the
-resulting histogram is skewed. This should be addressed later.
+The code below generates a histogram of residuals \ref{fig:levr1_rw} for the Linear Regression model that have so far. From the chart we can say that the resulting histogram is skewed. This should be addressed later.
+
 ```{r levr1_rw, fig.align="center", fig.cap="Histogram of Residual Errors", fig.pos='h', fig.width=5, message=FALSE, warning=FALSE}
 hist(residuals(wines_red_data.fit1), xlab = "", main = "")
 ```
@@ -235,29 +240,35 @@ crPlots(wines_red_data.fit1, layout = c(4,3), main = "")
 
 ## Assessing Outliers
 To evaluate the model we calculate Bonferonni p-value for most extreme observations (code below). Both p-value and Bonferroni-corrected p-value are smaller than 0.05, so the model is acceptable.
+
 ```{r}
 outlierTest(wines_red_data.fit)
 ```
 
 In addition we generate (code below) a QQ-Plot for Studentized Residuals. This graph is presented on Figure \ref{fig:qq_regr_rw}. Analyzing the chart we can see that our model has some deviation in the area of low QLT values. Most likely is explained by the low number of observation in than part of the dataset as was shown in Figure \ref{fig:hist_qlt_rw}.
+
 ```{r qq_regr_rw, echo=FALSE, fig.align="center", fig.cap="QQ Plot for studentized residuals", fig.width=5, fig.height=5, message=FALSE, warning=FALSE}
 qqPlot(wines_red_data.fit, main="", ylab="Studentized Residuals" ) 
 ```
 
 Another test model parameters is Leverage Plots (generated by the code below). Points further from the horizontal line than the slanted line effectively try to make the hypothesis test more significant, and those closer to the horizontal than the slanted line try to make the hypothesis test less significant. Figure \ref{fig:levr_rw} shows that our model is pretty well balanced and no collinearity between attributes.
+
 ```{r levr_rw, fig.cap="Red Wines - Leverage Plots", echo=TRUE, fig.align="center", fig.height=9, fig.width=5.5, message=FALSE, warning=FALSE}
 leveragePlots(wines_red_data.fit, layout = c(4,3), main = "")
 ```
 
 ## Test for Autocorrelated Errors
-The Durbin Watson statistic is a number that tests for autocorrelation in the residuals from a statistical regression analysis. The Durbin-Watson statistic is always between 0 and 4. Values close to 2 low autocorrelation. Our model has the value of 1.76. Our model has low autocorrelation error.
+The Durbin Watson statistic is a number that tests for autocorrelation in the residuals from a statistical regression analysis. The Durbin-Watson statistic is always between 0 and 4. Values close to 2 low autocorrelation. Our model has the value of 1.76. Our model has low autocorrelation errors.
+
 ```{r}
 durbinWatsonTest(wines_red_data.fit)
 ```
 \newpage
 
 ## Global test of model assumptions
-The following code tests for global model assumptions using gvmodel method  \citep{pena_global_2006} and is used for testing the four assumptions of the linear model.  If the global procedure indicates a violation of at least one of the assumptions, then the components of the global test statistic can be used to gain insight into which assumptions have been violated. It can also be used in conjunction with associated deletion statistics to detect unusual observations. Code below performs the tests and outputs the results. As we can see, 3 out of 5 global OLS assumptions including the Skewness are not satisfied. We will address this in the next section.
+The following code tests for global model assumptions using gvmodel method  \citep{pena_global_2006} and is used for testing the four assumptions of the linear model.  If the global procedure indicates a violation of at least one of the assumptions, then the components of the global test statistic can be used to gain insight into which assumptions have been violated. It can also be used in conjunction with associated deletion statistics to detect unusual observations. 
+
+Code below performs the tests and outputs the results. As we can see, 3 out of 5 global Linear Regression assumptions including the Skewness are not satisfied. We will address this in the next section.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
 library(gvlma)
@@ -268,6 +279,7 @@ summary(gvmodel)
 
 # Addressing Skewness Problem
 To address the skewness of the model we will try to correct it applying the logarithmic transformation to the QLT target. The 1.25 parameter was obtained experimentally after several iterations. A histogram of residuals after correcting the skewness and presented in Figure \ref{fig:levr2_rw}
+
 ```{r}
 library(car)
 summary(wines_red_data.fit2 <- lm (
@@ -279,8 +291,10 @@ hist(residuals(wines_red_data.fit2), xlab = "", main = "")
 ```
 
 \newpage
-## Re-testing OLS global assumptions
-Global assumptions were re-tested by the code below and the results presented. Results show that we fixed the skewness. Overall the model has Adjusted R-squared of 0.3597 which is slight improvement over previous values. Our model satisfied 3 out of 5 of the global OLS assumptions. The Skewness problem has been resolved.
+
+## Re-testing Linear Regression global assumptions
+Global assumptions were re-tested by the code below and the results presented. Results show that we fixed the skewness. Overall the model has Adjusted R-squared of 0.3597 which is slight improvement over previous values. Our model satisfied 3 out of 5 of the global Linear Regression assumptions. The Skewness problem has been resolved.
+
 ```{r}
 gvmodel <- gvlma(wines_red_data.fit2) 
 summary(gvmodel)
@@ -330,11 +344,13 @@ cor(dtPrediction,test.data$QLT)
 \newpage
 
 To visualize the results we generated (code below) a QQ-Plot for Studentized Residuals. This graph is presented on Figure \ref{fig:qq_rt_rw}. Analyzing the chart we can see that our model has comparable deviations in the area of a low, middle and high QLT values.
+
 ```{r qq_rt_rw, fig.width=5.5, fig.align="center", message=FALSE, warning=FALSE, paged.print=FALSE, fig.cap="Regression Tree Prediction QQ Plot"}
 qqPlot(dtPrediction, main="" )
 ```
 
 In addition we generated a visual representation of the RT method prediction using a scatter plot in Figure \ref{fig:plot_rt_rw}.
+
 ```{r plot_rt_rw, fig.width=5.5, fig.align="center", message=FALSE, warning=FALSE, paged.print=FALSE, fig.cap="Regression Tree Prediction"}
 plot(jitter(test.data$QLT), dtPrediction, 
      pch=20, col=rgb(0.1, 0.2, 0.8, 0.3), 
@@ -357,7 +373,7 @@ fitRF1 <- randomForest(
   data=train.data, importance=TRUE, ntree=1000)
 ```
 
-Importance of the dataset attributes for the prediction of the "class" attribute shown in Figure \ref{fig:forimp}. Analyzing this chart we conclude that the proper order of attributes importance for the prediction of the target attribute is: ALC, SUL VA, TSD, DEN, FA, CA, CH, FSD, pH and RS. It contradicts the absolute values of the OLS coeffitients assigned to independent attributes, i.e. SUL at 0.88 seems to be more important than ALC at 0.29. This difference could be explained by limitation of OLS .
+Importance of the dataset attributes for the prediction of the "class" attribute shown in Figure \ref{fig:forimp}. Analyzing this chart we conclude that the proper order of attributes importance for the prediction of the target attribute is: ALC, SUL VA, TSD, DEN, FA, CA, CH, FSD, pH and RS. It contradicts the absolute values of the Linear Regression coeffitients assigned to independent attributes, i.e. SUL at 0.88 seems to be more important than ALC at 0.29. This difference could be explained by limitation of OLS .
 
 ```{r forimp, fig.width=4, fig.align="center", message=FALSE, warning=FALSE, paged.print=FALSE, fig.cap="Importance of the dataset attributes for the prediction of the 'class' attribute"}
 varImpPlot(fitRF1, main="")
@@ -389,7 +405,7 @@ qqPlot(PredictionRF1, main="")
 # Conclusion
 Through exploring the Red Wine Quality dataset and using a different methods of Linear Regression we developed an algorithm to predict the wine quality using its chemical characteristics.
 
-First we applies an OLS and through several steps of correcting the model and adjusting for skewness and then comparing it to automated Stepwise Regression method we achieved the accuracy of RT at 0.5480833 is 50% higher than OLS. 
+First we applied the Linear Regression OLS method and through several steps of correcting the model and adjusting for skewness and then comparing it to automated Stepwise Regression method we achieved the accuracy of RT at 0.5480833 is 50% higher than OLS. 
 
 Next we  applied tree-based regression methods. First we used a Regression Tree which gave us accuracy of 0.5480833. The final method was the Random Forest Regressor and achieved 80% better accuracy at 0.6734 comparing  to OLS. 
 
