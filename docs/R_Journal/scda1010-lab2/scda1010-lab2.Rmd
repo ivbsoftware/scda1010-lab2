@@ -247,7 +247,7 @@ outlierTest(wines_red_data.fit)
 
 In addition we generate (code below) a QQ-Plot for Studentized Residuals. This graph is presented on Figure \ref{fig:qq_regr_rw}. Analyzing the chart we can see that our model has some deviation in the area of low QLT values. Most likely is explained by the low number of observation in than part of the dataset as was shown in Figure \ref{fig:hist_qlt_rw}.
 
-```{r qq_regr_rw, echo=FALSE, fig.align="center", fig.cap="QQ Plot for studentized residuals", fig.width=5, fig.height=5, message=FALSE, warning=FALSE}
+```{r qq_regr_rw, echo=FALSE, fig.align="center", fig.cap="QQ Plot for Studentized Residuals", fig.width=5, fig.height=8, message=FALSE, warning=FALSE}
 qqPlot(wines_red_data.fit, main="", ylab="Studentized Residuals" ) 
 ```
 
@@ -323,7 +323,7 @@ prop.table((table(test.data$QLT)))
 ## Regression Tree fit
 The Regression Tree method \citep{R-rpart} is known to be computationally fast but not very precise, we have use all default parameters and all attributes of the train dataset in the resulting Decision Tree presented in Figure \ref{fig:dtree}. In a regression tree, the tree arranges or segments observations into regions of a predictor space.  Regression tree, since the target variable is a real valued number, fits a regression model to the target variable using each of the independent variables. Then for each independent variable, the data is split at several split points. It calculates Sum of Squared Error(SSE) at each split point between the predicted value and the actual values. The variable resulting in minimum SSE is selected for the node. Then this process is recursively continued till the entire data is covered.
 
-```{r dtree, fig.width=6,fig.align="center", fig.cap="Regression Tree Diagram", message=FALSE, warning=FALSE}
+```{r dtree, fig.height=9, fig.width=5.5, fig.align="center", fig.cap="Regression Tree Diagram", message=FALSE, warning=FALSE}
 library(rpart)
 library(rpart.plot)
 library(rattle)
@@ -356,9 +356,8 @@ library(ggplot2)
 df1 = data.frame(as.factor(test.data$QLT), dtPrediction)
 colnames(df1) <- c("Test","Prediction")
 ggplot(df1, aes(x = Test, y = Prediction)) +
-        geom_boxplot() + geom_boxplot() +
-        geom_jitter(width = 0.25, pch=20, col=rgb(0.1, 0.2, 0.8, 0.3), 
-                    ylab="Prediction", xlab="Test Values")
+        geom_boxplot(outlier.colour = "red") +
+        geom_jitter(width = 0.25, pch=20, col=rgb(0.1, 0.2, 0.8, 0.3))
 ```
 
 \newpage
@@ -419,9 +418,9 @@ Next we  applied tree-based regression methods. First we used a Regression Tree 
 
 The project was a success.
 
-\newpage
-
 \bibliography{RJreferences}
+
+\newpage
 
 # Note from the Authors
 This file was generated using [_The R Journal_ style article template](https://github.com/rstudio/rticles), additional information on how to prepare articles for submission is here - [Instructions for Authors](https://journal.r-project.org/share/author-guide.pdf). The article itself is an executable R Markdown file that could be [downloaded from Github](https://github.com/ivbsoftware/scda1010-lab2/tree/master/docs/R_Journal/scda1010-lab2) with all the necessary artifacts.
