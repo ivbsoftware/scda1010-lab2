@@ -398,9 +398,8 @@ library(ggplot2)
 df2 = data.frame(as.factor(test.data$QLT), PredictionRF1)
 colnames(df2) <- c("Test","Prediction")
 ggplot(df2, aes(x = Test, y = Prediction)) +
-        geom_boxplot() + geom_boxplot() +
-        geom_jitter(width = 0.25, pch=20, col=rgb(0.1, 0.2, 0.8, 0.3), 
-                    ylab="Prediction", xlab="Test Values")
+        geom_boxplot(outlier.colour = "red") +
+        geom_jitter(width = 0.25, pch=20, col=rgb(0.1, 0.2, 0.8, 0.3))
 ```
 
 ```{r qq_rf_rw, fig.width=5.5, fig.align="center", message=FALSE, warning=FALSE, paged.print=FALSE, fig.cap="Random Forest Prediction QQ Plot"}
@@ -416,7 +415,7 @@ First we applied the Linear Regression OLS method and through several steps of c
 
 Next we  applied tree-based regression methods. First we used a Regression Tree which gave us accuracy of 0.5480833. The final method was the Random Forest Regressor and achieved 80% better accuracy at 0.6734 comparing  to OLS. 
 
-The project was a success.
+The project was a success, however, none of the Linear Regression methods used would give us reliable precision. All the plots show the presence of outliers and inaccuracy in the areas of low and high scores. We conclude that the current problem could not be solved by the Linear Regression methods only, it looks that additional methods like Clustering is required to split the dataset into smaller sets to satisfy Linear Regression limitations.
 
 \bibliography{RJreferences}
 
