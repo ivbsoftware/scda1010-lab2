@@ -1,9 +1,9 @@
 ---
 title: "R Notebook"
 output:
+  pdf_document: default
   html_document:
     df_print: paged
-  pdf_document: default
 ---
 
 This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
@@ -65,8 +65,16 @@ wines_red_data <-
     sep=";", 
     header = TRUE, 
     col.names = c("FA","VA","CA","RS","CH","FSD","TSD","DEN","pH","SUL","ALC","QLT"))
-
-str(wines_red_data)
+```
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, results='asis'}
+library(xtable)
+options(xtable.floating = TRUE)
+options(xtable.timestamp = "")
+options(xtable.comment = FALSE)
+print(xtable(summary(wines_red_data[,1:4])), include.rownames = FALSE)
+print(xtable(summary(wines_red_data[,5:8]), 
+  caption = "\\tt Red Wines Dataset Summary", label = "table:sum_rw"),
+  include.rownames = FALSE)
 ```
 
 

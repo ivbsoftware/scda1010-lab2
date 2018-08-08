@@ -15,7 +15,7 @@ author:
     affiliation   : "York University School of Continuing Studies"
     email         : "https://learn.continue.yorku.ca/user/profile.php?id=21219"
 abstract: >
-  We are using a dataset related to red vinho verde wine samples, from the north of Portugal. The goal is to model wine quality based on physicochemical tests. The classes are ordered and not balanced (e.g. there are munch more normal wines than excellent or poor ones). Outlier detection algorithms could be used to detect the few excellent or poor wines. Also, we are not sure if all input variables are relevant. So it could be interesting to test feature selection methods. The method chosen to solve the problem is Linear Regression.
+  We are using a dataset related to red vinho verde wine samples, from the north of Portugal. The goal is to model wine quality based on physicochemical tests. The classes are ordered and not balanced (e.g. there are much more normal wines than excellent or poor ones). Outlier detection algorithms could be used to detect the few excellent or poor wines. Also, we are not sure if all input variables are relevant. So it could be interesting to test feature selection methods. The method chosen to solve the problem is Linear Regression.
 output:
   rticles::rjournal_article:
     includes:
@@ -25,7 +25,7 @@ figsintext        : no
 
 ## Introduction
 
-Once viewed as a luxury good, nowadays wine is increasingly enjoyed by a
+Once viewed as a luxury good, nowadays wine is increasingly enjoyed by 
 all consumers. Portugal is a top ten wine exporting country with
 3.17% of the market share in 2005 \citep{faostat}. Exports of its vinho verde wine (from
 the northwest region) have increased by yearly. To support
@@ -48,13 +48,13 @@ are complex and still not fully understood \citep{legin_evaluation_2003}.
 
 The two datasets presented in \citep{WineDataset} are related to red and white variants of the Portuguese "Vinho Verde" wine. For more details, consult \citep{CorCer09}. Due to privacy and logistic issues, only physicochemical (inputs) and sensory (the output) variables are available (e.g. there is no data about grape types, wine brand, wine selling price, etc.).
 
-These datasets can be viewed as classification or regression tasks. The classes are ordered and not balanced (e.g. there are munch more normal wines than excellent or poor ones). Outlier detection algorithms could be used to detect the few excellent or poor wines. Also, we are not sure if all input variables are relevant.
+These datasets can be viewed as classification or regression tasks. The classes are ordered and not balanced (e.g. there are much more normal wines than excellent or poor ones). Outlier detection algorithms could be used to detect the few excellent or poor wines. Also, we are not sure if all input variables are relevant.
 
 Due to specific purpose of this lab assignment, we are looking at  Linear Regression problem only using red wine dataset. Full library of the wine datasets and their description are located here: \citep{WineDataset}.
 
 ## Objective
 
-The objective of this article is to provide a reliable and feasible recommendation algorithm to predict wine quality based on physicochemical tests.  The target value is a numeric value of wine 'quality', hence the task could be solved by Linear Regression methods. The following 'methodology'check list' standard for a Linear Regression tasks will be applied to the problem at hand:
+The objective of this article is to provide a reliable and feasible recommendation algorithm to predict wine quality based on physicochemical tests.  The target value is a numeric value of wine 'quality', hence the task could be solved by Linear Regression methods. The following methodology 'check list' standard for a Linear Regression tasks will be applied to the problem at hand:
 
  * Put all relevant variables in the model
  * Leave the irrelevant variables out
@@ -63,7 +63,7 @@ The objective of this article is to provide a reliable and feasible recommendati
  
     - Residuals have a mean of zero
     - Normality of errors
-    - Residuals are not autocorrelated
+    - Residuals are not auto correlated
     - Linearity of variables
     - More data than independent variables is used in model building
     - No excessive collinearity
@@ -94,169 +94,205 @@ Output variable (based on sensory data):
 ## Preparation
 To perform the analysis, certain R libraries were used. The code below was used to load and initialize the libraries. The first line invoking seed function was applied to enforce the repeatability of the calculation results.
 
-```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
 set.seed(42)
 library(ggplot2)
 library(rpart)
 library(rpart.plot)
 library(rattle)
 library(caret)
+library(readr)
 ```
 
 ## Reading red wines dataset
-
-The dataset was loaded directly from the site \citep{WineDataset} using the R statement below. Note that column names were assigned as the dataset headers had long name making it inconvinient to present it in tables and charts. Corresponence of variable codes to long names is shown in the [previous section](#data-understanding).
+The dataset was loaded directly from the site \citep{WineDataset} using the R statement below. Note that column names were assigned as the dataset headers had long name making it inconvenient to present it in tables and charts. Correspondence of variable codes to long names is shown in the [previous section](#data-understanding).
 
 ```{r}
-library(readr)
 wines_red_data <- read.csv(
- "http://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv",
+  paste ("http://archive.ics.uci.edu",
+         "ml/machine-learning-databases/wine-quality/winequality-red.csv",
+         sep = "/"),
  sep=";", header = TRUE, 
  col.names = c("FA","VA","CA","RS","CH","FSD","TSD","DEN","pH","SUL","ALC","QLT"))
 ```
 
+## Preview of the data
+To pretty-print the first rows of the dataset xtable \citep{R-xtable} library was used to generate Table \ref{table:dhead10}.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, results='asis'}
+library(xtable)
+options(xtable.floating = TRUE)
+options(xtable.timestamp = "")
+options(xtable.comment = FALSE)
+xtable(head(wines_red_data, n = 10), 
+  caption = "\\tt Red Wines Quality Dataset - first rows", label = "table:dhead10")
+```
+
+\newpage
+
+## Data attributes summary
+Quick view of the data attributes statistics presented in the Table \ref{table:sum_rw}. For each attribute in the dataset this table shows min, max, mean and normal distribution 1st and 3rd quartiles values.
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, results='asis'}
+print(xtable(summary(wines_red_data[,1:6])), include.rownames = FALSE, scalebox=.9)
+print(xtable(summary(wines_red_data[,7:12]), 
+  caption = "\\tt Red Wines Dataset Summary", label = "table:sum_rw"),
+  include.rownames = FALSE, scalebox=.9)
+```
+
 ## Check for missing values
-The dataset has no missing values. Code below calculate number of worw with missing values and checks if there is at list one.
+The dataset has no missing values. Code below calculate number of rows with missing values and checks if there is at list one.
 ```{r}
 any(is.na(wines_red_data))
 ```
 
-\newpage
-## Preview of the data
-To pretty-print the first 20 rows of the dataset xtable \citep{R-xtable} library was used to generate Table \ref{table:dhead10}.
-
-```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, results='asis'}
-library(xtable)
-xtable(head(wines_red_data, n=20), 
-  caption = "\\tt Red Wines Quality Dataset - first 20 rows", label = "table:dhead10")
-```
-
 ## Distribution of target value in the dataset
-As we mentione before, the target value QLT of the wine quality is not equaly distributed. The Figure \ref{fig:hist_qlt_rw} demonstrates the distribution. As we can see, dataset covers medium-quality wines with QLT between 5 and 7 well, low and high  quality wines represented poorly.
+As we mentioned before, the target value QLT of the wine quality is not equally distributed. The Figure \ref{fig:hist_qlt_rw} demonstrates the distribution. As we can see, dataset covers mostly medium-quality wines with QLT between 5 and 7 well, low and high  quality wines represented poorly.
 
-```{r hist_qlt_rw, fig.pos = 'h', fig.height=3, fig.width=5, fig.align="center", fig.cap="DIstribution of Wine QUality Attribute"}
+```{r hist_qlt_rw, fig.pos = 'h', fig.height=3, fig.width=5, fig.align="center", fig.cap="Distribution of Wine Quality Attribute"}
 ggplot(data = wines_red_data, mapping = aes(x = QLT)) + geom_bar()
 ```
+
 \newpage
+
 # OLS Modeling
 ## Default Linear Regression fit
-The following code calculates the default OLS model using all the indepedent variables. Results of the calculatiions presented below.
+The following code calculates the default OLS model using all the independent variables. Results of the calculations and analysis are presented below.
 ```{r echo=TRUE, warning=FALSE}
 wines_red_data.fit <- lm (QLT ~ ., data=wines_red_data)
 fit.sum <- summary(wines_red_data.fit)
 fit.sum
 ```
+The first item shown in the output is the formula R used to fit the data. The next item in the model output talks about the residuals. Residuals are essentially the difference between the actual observed response values (distance to stop dist in our case) and the response values that the model predicted. We can see that those values are distributed with slight skewness. The next section in the model output talks about the coefficients of the model. 
 
-## Adjust the fit removing attributes with p > 0.05
-As we can see, Adjusted R-squared is pretty low at `r fit.sum["adj.r.squared"]`. In addition several varibles, like FA, CA, RS, and DEN
-have shown to be not significant at p > 0.05. Let's remove them from the model and check if this helps increase the model reliabiliry.
+The coefficient Standard Error measures the average amount that the coefficient estimates vary from the actual average value of our response variable.
 
+The coefficient t-value is a measure of how many standard deviations our coefficient estimate is far away from 0. We want it to be far away from zero as this would indicate we could reject the null hypothesis - that is, we could declare a relationship between speed and distance exist. In our example, the t-statistic values are relatively far away from zero for some attributes and close to others. 
+
+The model should be adjusted by removing some of the attributes from it. The Pr(>t) acronym found in the model output relates to the probability of observing any value equal or larger than t.
+
+F-statistic is an indicator of whether there is a relationship between predictor and the response variables. When the number of data points is large, an F-statistic that is only a little bit larger than 1 is already sufficient to reject the null hypothesis (H0 : There is no relationship). The reverse is true, a large F-statistic is required to be able to ascertain that there may be a relationship between predictor and response variables. In our example the F-statistic is  relatively larger than 1 given the size of our data. We could say that H0 hypothesis is not rejected in our model. 
+
+As we can see, Adjusted R-squared is pretty low at `r fit.sum["adj.r.squared"]`. In addition several variables like FA, CA, RS, and DEN have shown to be not significant at p > 0.05.
+\newpage
+
+## Adjusting the model
+Let's remove them from the model and check if this helps increase the model reliability.
 ```{r}
 wines_red_data.fit1 <- lm (QLT ~ VA + CH + FSD + TSD + pH + SUL + ALC,
                            data=wines_red_data)
 fit1.sum <- summary(wines_red_data.fit1)
 fit1.sum
 ```
-
-As we can see, the reliability of the new model slightly inreased. We now have Adjusted R-squared at `r fit1.sum["adj.r.squared"]` comparing to previous `r fit.sum["adj.r.squared"]`
+As we can see, the reliability of the new model slightly increased. We now have Adjusted R-squared at `r fit1.sum["adj.r.squared"]` comparing to the previous `r fit.sum["adj.r.squared"]`.
 
 ## Stepwise Regression
-Stepwise Regression method allows to find the best regression model automatically. Code below searches for the best fit iterating through the combination of the independent variables to find the best fit. As we see from the algorithm output the new  model is identical to the one found the the previous section.
-
+Stepwise Regression method starts with the full model and eliminates predictors one at a time, at each step considering whether the criterion will be improved. As we see from the algorithm output, the new  model is identical to the one found the previous section manually.
 ```{r message=FALSE, warning=FALSE}
 library(MASS)
 fit <- lm(QLT ~ .,data=wines_red_data)
 step <- stepAIC(fit, direction="both", trace = FALSE)
 step$anova
 ```
+\newpage
 
-# Analisys of the model
+# Analysis of the final OLS model
+## Checking intercolliearity of the model
+To estimate intercollinearity of the model we start with generating  correlation matrix of our dataset attributes included in the final model. This is presented in Table \ref{table:table_cor_rw}. To present the same information graphically, we generate pairwise scatter plots (Figure \ref{fig:pair_rw}). 
 
-The code below generates a histogram of residuals \ref{fig:levr1_rw} for the OLS model hew have so far. From the chart we can say that the
+The analysis show that attributes FSD and TSD have noticeable correlation at 0.67. This should be tested and fixed is necessary.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, results='asis'}
+options(xtable.floating = TRUE)
+options(xtable.timestamp = "")
+options(xtable.comment = FALSE)
+cor_rw <- cor(wines_red_data[c("QLT","VA","CH","FSD","TSD","pH","SUL","ALC")])
+table_cor_rw <- xtable(cor_rw, 
+  caption = "\\tt Red Wines Quality Dataset Correlation Matrix", label = "table:table_cor_rw")
+print(table_cor_rw, scalebox=1)
+```
+
+## Checking model skewness
+The code below generates a histogram of residuals \ref{fig:levr1_rw} for the OLS model that have so far. From the chart we can say that the
 resulting histogram is skewed. This should be addressed later.
-
-```{r levr1_rw, fig.align="center", fig.cap="Histogram of Residual Errors", fig.height=3, fig.pos='h', fig.width=5, message=FALSE, warning=FALSE}
+```{r levr1_rw, fig.align="center", fig.cap="Histogram of Residual Errors", fig.pos='h', fig.width=5, message=FALSE, warning=FALSE}
 hist(residuals(wines_red_data.fit1), xlab = "", main = "")
 ```
 
-## Plot pairwise scatter plots
-Pairwise scatter plots \ref{fig:pair_rw}  to inspect the result for relationships between the independent variable and the numerical dependent variables.
-
-```{r pair_rw, fig.height=9, fig.width=6, fig.align="center", fig.cap="Red Wines - relationships between variables"}
+```{r pair_rw, echo=FALSE, fig.align="center", fig.cap="Relationships between the OSL model variables", fig.height=9, fig.width=6, message=FALSE, warning=FALSE}
 attach(wines_red_data)
 panel.points<-function(x,y){points(x,y,cex=.1)}
 pairs(~QLT + VA + CH + FSD + TSD + pH + SUL + ALC,
       upper.panel=panel.points,lower.panel=panel.points)
 ```
 
-## Checking correlation matrix
-```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, results='asis'}
-options(xtable.floating = TRUE)
-options(xtable.timestamp = "")
-options(xtable.comment = FALSE)
-cor_rw <- cor(wines_red_data)
-table_cor_rw <- xtable(cor_rw, 
-  caption = "\\tt Red Wines Quality Dataset Correlation Matrix", label = "table:table_cor_rw")
-print(table_cor_rw, scalebox=.9)
-```
+## Evaluate Nonlinearity via Component + Residual plots 
+A residual plot is a graph that shows the residuals on the vertical axis and the independent variable on the horizontal axis. If the points in a residual plot are randomly dispersed around the horizontal axis, a linear regression model is appropriate for the data; otherwise, a non-linear model is more appropriate. Our model's attributes are reasonably dispersed (see Figure \ref{fig:resplt_rw})  for most of the independent variables. Some pattern is shown for TSD and CH attributes. Code below generates the plot using srPlot function.
 
-## Evaluate Nonlinearity component + residual plot 
-```{r resplt_rw, fig.align="center", fig.cap="Component + Resuduals Plot", fig.height=9, fig.width=6, message=FALSE, warning=FALSE}
+```{r resplt_rw, fig.align="center", fig.cap="Component + Residuals Plot", fig.height=9, fig.width=6, message=FALSE, warning=FALSE}
 library(car)
 crPlots(wines_red_data.fit1, layout = c(4,3), main = "")
 ```
+
 ## Assessing Outliers
+To evaluate the model we calculate Bonferonni p-value for most extreme observations (code below). Both p-value and Bonferroni-corrected p-value are smaller than 0.05, so the model is acceptable.
 ```{r}
-outlierTest(wines_red_data.fit) # Bonferonni p-value for most extreme obs
-```
-Both p-value and Bonferroni-corrected p-value are smaller that 0.05, so the model is acceptable.
-
-```{r qq_regr_rw, echo=TRUE, fig.align="center", fig.cap="QQ Plot for studentized residuals", fig.pos='h', fig.width=5, fig.height=5, message=FALSE, warning=FALSE}
-qqPlot(wines_red_data.fit, main="", ylab="Studentized Residuals" )  #qq plot for studentized resid 
+outlierTest(wines_red_data.fit)
 ```
 
-A residual plot is a graph that shows the residuals on the vertical axis and the independent variable on the horizontal axis. If the points in a residual plot are randomly dispersed around the horizontal axis, a linear regression model is appropriate for the data; otherwise, a non-linear model is more appropriate. Our model is reasonably dispersed around 0,0 for each of the independent variables <ref>
+In addition we generate (code below) a QQ-Plot for Studentized Residuals. This graph is presented on Figure \ref{fig:qq_regr_rw}. Analyzing the chart we can see that our model has some deviation in the area of low QLT values. Most likely is explained by the low number of observation in than part of the dataset as was shown in Figure \ref{fig:hist_qlt_rw}.
+```{r qq_regr_rw, echo=FALSE, fig.align="center", fig.cap="QQ Plot for studentized residuals", fig.width=5, fig.height=5, message=FALSE, warning=FALSE}
+qqPlot(wines_red_data.fit, main="", ylab="Studentized Residuals" ) 
+```
 
-```{r levr_rw, fig.pos = 'h', fig.width=5.5, fig.height= 9, fig.align="center", fig.cap="Red Wines - Leverage Plots"}
-# leverage plots
+Another test model parameters is Leverage Plots (generated by the code below). Points further from the horizontal line than the slanted line effectively try to make the hypothesis test more significant, and those closer to the horizontal than the slanted line try to make the hypothesis test less significant. Figure \ref{fig:levr_rw} shows that our model is pretty well balanced and no collinearity between attributes.
+```{r levr_rw, fig.cap="Red Wines - Leverage Plots", echo=TRUE, fig.align="center", fig.height=9, fig.width=5.5, message=FALSE, warning=FALSE}
 leveragePlots(wines_red_data.fit, layout = c(4,3), main = "")
 ```
 
-
+## Test for Autocorrelated Errors
+The Durbin Watson statistic is a number that tests for autocorrelation in the residuals from a statistical regression analysis. The Durbin-Watson statistic is always between 0 and 4. Values close to 2 low autocorrelation. Our model has the value of 1.76. Our model has low autocorrelation error.
 ```{r}
-# Test for Autocorrelated Errors
 durbinWatsonTest(wines_red_data.fit)
 ```
+\newpage
 
+## Global test of model assumptions
+The following code tests for global model assumptions using gvmodel method  \citep{pena_global_2006} and is used for testing the four assumptions of the linear model.  If the global procedure indicates a violation of at least one of the assumptions, then the components of the global test statistic can be used to gain insight into which assumptions have been violated. It can also be used in conjunction with associated deletion statistics to detect unusual observations. Code below performs the tests and outputs the results. As we can see, 3 out of 5 global OLS assumptions including the Skewness are not satisfied. We will address this in the next section.
 
-```{r}
-# Global test of model assumptions
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
 library(gvlma)
-gvmodel <- gvlma(wines_red_data.fit1) 
+gvmodel <- gvlma(wines_red_data.fit1)
 summary(gvmodel)
 ```
-# Addressing Skeweness using log transformation
+\newpage
 
+# Addressing Skewness Problem
+To address the skewness of the model we will try to correct it applying the logarithmic transformation to the QLT target. The 1.25 parameter was obtained experimentally after several iterations. A histogram of residuals after correcting the skewness and presented in Figure \ref{fig:levr2_rw}
 ```{r}
 library(car)
 summary(wines_red_data.fit2 <- lm (
-  bcPower(QLT,1.25)  ~ VA + CH + FSD + TSD + pH + SUL + ALC,
-  data=wines_red_data))
+  bcPower(QLT,1.25)  ~ VA + CH + FSD + TSD + pH + SUL + ALC, data=wines_red_data))
+```
+
+```{r levr2_rw, echo=FALSE, fig.align="center", fig.cap="Histogram of residuals after correcting the skewness", fig.height=3, fig.width=5}
+hist(residuals(wines_red_data.fit2), xlab = "", main = "")
+```
+
+\newpage
+## Re-testing OLS global assumptions
+Global assumptions were re-tested by the code below and the results presented. Results show that we fixed the skewness. Overall the model has Adjusted R-squared of 0.3597 which is slight improvement over previous values. Our model satisfied 3 out of 5 of the global OLS assumptions. The Skewness problem has been resolved.
+```{r}
 gvmodel <- gvlma(wines_red_data.fit2) 
 summary(gvmodel)
 ```
 
-
-```{r levr2_rw, fig.pos = 'h', fig.width=5, fig.height=4, fig.align="center", fig.cap="HIstogram of residuals after correcting the Skewness"}
-hist(residuals(wines_red_data.fit2), xlab = "Residuals", main = "")
-```
-
+\newpage
 
 # Tree-based regression methods
-Tree-based methods, while simple and useful for interpretation, are typically not as competitive with the best supervised learning approaches such as polynomial regression. However, tree-based methods such as regression tree and random forests make up for this shortfall. By combining a large number of trees instead of one, the model usually results in dramatic improvements in terms of prediction accuracy. This improvement in accuracy comes at the expense of loss in intepretation.
+Tree-based methods, while simple and useful for interpretation, are typically not as competitive with the best supervised learning approaches such as polynomial regression. However, tree-based methods such as regression tree and random forests make up for this shortfall. By combining a large number of trees instead of one, the model usually results in dramatic improvements in terms of prediction accuracy. This improvement in accuracy comes at the expense of loss in interpretation.
 
 ## Splitting the dataset into train and test
-The dataset has been split in such a way that train and test sets would have the same distribution of the 'QLT' attribute. The reason for this stratification strategy is to focus on the priority on the target value. We used 60:34 split ratio. 
+The dataset has been split in such a way that train and test sets would have the same distribution of the 'QLT' attribute. The reason for this stratification strategy is to focus on the priority on the target value. We used 60:34 split ratio. The code below also checks for distribution of QLT in train and test sets. As we can see, those values match well.
 
 ```{r message=FALSE, warning=FALSE}
 library(caret)
@@ -270,10 +306,10 @@ test.data<- wines_red_data[-train.rows,]
 prop.table((table(test.data$QLT)))
 ```
 
-## Regression tree fit
-In a regression tree, the tree arranges or segments observations into regions of a predictor space. For example, using the "Hitters" data set, which contains various statistics on baseball players, a tree might look something like in Figure \ref{fig:dtree} generated by the code below.
+## Regression Tree fit
+The Regression Tree method \citep{R-rpart} is known to be computationally fast but not very precise, we have use all default parameters and all attributes of the train dataset in the resulting Decision Tree presented in Figure \ref{fig:dtree}. In a regression tree, the tree arranges or segments observations into regions of a predictor space.  Regression tree, since the target variable is a real valued number, fits a regression model to the target variable using each of the independent variables. Then for each independent variable, the data is split at several split points. It calculates Sum of Squared Error(SSE) at each split point between the predicted value and the actual values. The variable resulting in minimum SSE is selected for the node. Then this process is recursively continued till the entire data is covered.
 
-```{r dtree, fig.pos='h', fig.width=5.5, fig.height=4, fig.align="center", fig.cap="Regression Tree Diagram", message=FALSE, warning=FALSE}
+```{r dtree, fig.width=6,fig.align="center", fig.cap="Regression Tree Diagram", message=FALSE, warning=FALSE}
 library(rpart)
 library(rpart.plot)
 library(rattle)
@@ -283,65 +319,85 @@ reg.tree <- rpart(QLT ~ ., method="anova", data = train.data)
 fancyRpartPlot(reg.tree, main="", sub="")
 ```
 
-
-```{r dtreeimp}
-# reg.tree$variable.importance
-```
-
 ## Regression Tree model evaluation
-This Decision Tree favours the following attributes in order of their importance for the prediction of the target attribute: health, has_nurs, parents. It does not consider the rest of the attributes as important. Let's apply the model to the test set and evaluate accuracy of the predictions. 
+This Decision Tree favors the following attributes in order of their importance for the prediction of the target attribute: ALC, VA, SUL, TSD and FSDs. It does not consider the rest of the attributes as important. Let's apply the model to the test set and evaluate accuracy of the predictions. As we can see, the accuracy of RT  at 0.5480833 is 50% higher than OLS.
 
 ```{r }
 dtPrediction <- predict(reg.tree, test.data)
 cor(dtPrediction,test.data$QLT)
 ```
 
-```{r plot_rt_rw, fig.pos='h', fig.width=5.5, fig.align="center", message=FALSE, warning=FALSE, paged.print=FALSE, fig.cap="Regression Tree Prediction"}
+\newpage
+
+To visualize the results we generated (code below) a QQ-Plot for Studentized Residuals. This graph is presented on Figure \ref{fig:qq_rt_rw}. Analyzing the chart we can see that our model has comparable deviations in the area of a low, middle and high QLT values.
+```{r qq_rt_rw, fig.width=5.5, fig.align="center", message=FALSE, warning=FALSE, paged.print=FALSE, fig.cap="Regression Tree Prediction QQ Plot"}
+qqPlot(dtPrediction, main="" )
+```
+
+In addition we generated a visual representation of the RT method prediction using a scatter plot in Figure \ref{fig:plot_rt_rw}.
+```{r plot_rt_rw, fig.width=5.5, fig.align="center", message=FALSE, warning=FALSE, paged.print=FALSE, fig.cap="Regression Tree Prediction"}
 plot(jitter(test.data$QLT), dtPrediction, 
      pch=20, col=rgb(0.1, 0.2, 0.8, 0.3), 
      ylab="Prediction", xlab="Test Values", bty="n" )
 ```
 
-```{r qq_rt_rw, fig.pos='h', fig.width=5.5, fig.align="center", message=FALSE, warning=FALSE, paged.print=FALSE, fig.cap="Regression Tree Prediction QQ Plot"}
-qqPlot(dtPrediction, main="" )
-```
+\newpage
 
 ## Random Forest model fit
+Next step is to use more advanced but more computationally demanding Random Forest Regressor \citep{R-randomForest}. Random forests can be used for regression analysis and are in fact called Regression Forests. They are an ensemble of different Regression Trees and are used for nonlinear multiple regression. Each leaf contains a distribution for the continuous output variables. 
+
+Random Forest Regressor is an ensemble learning method for classification, regression and other tasks, that operate by constructing a multitude of decision trees at training time and outputting the class that is the mode of the classes (classification) or mean prediction (regression) of the individual trees. Random decision forests correct for decision trees' habit of overfitting to their training set.
+
+In addition, Random Forest Regressor algorithms can produce a graph explaining the importance independent attributes in the output result generation. The code below runs the calculations.
 
 ```{r message=FALSE, warning=FALSE}
 library(randomForest)
 fitRF1 <- randomForest(
   QLT ~ ., method="anova",
-  data=train.data, importance=TRUE, ntree=2000)
+  data=train.data, importance=TRUE, ntree=1000)
 ```
 
-```{r forimp, fig.pos='h', fig.width=5, fig.align="center", message=FALSE, warning=FALSE, paged.print=FALSE, fig.cap="Importance of the dataset attributes for the prediction of the 'class' attribute"}
+Importance of the dataset attributes for the prediction of the "class" attribute shown in Figure \ref{fig:forimp}. Analyzing this chart we conclude that the proper order of attributes importance for the prediction of the target attribute is: ALC, SUL VA, TSD, DEN, FA, CA, CH, FSD, pH and RS. It contradicts the absolute values of the OLS coeffitients assigned to independent attributes, i.e. SUL at 0.88 seems to be more important than ALC at 0.29. This difference could be explained by limitation of OLS .
+
+```{r forimp, fig.width=4, fig.align="center", message=FALSE, warning=FALSE, paged.print=FALSE, fig.cap="Importance of the dataset attributes for the prediction of the 'class' attribute"}
 varImpPlot(fitRF1, main="")
 ```
-\newpage
-## Random Forest model prediction and evaluation
 
+\newpage
+
+## Random Forest Regressor prediction and evaluation
+Code below applies fitted Random Forest Regressor model to the test data. The calculations show that RFR gives 80% better accuracy at 0.6734 than OLS at 0.3597.
 ```{r}
 PredictionRF1 <- predict(fitRF1, test.data)
 cor(PredictionRF1,test.data$QLT)
 ```
 
-```{r plot_rf_rw, fig.pos='h', fig.width=5.5, fig.align="center", message=FALSE, warning=FALSE, paged.print=FALSE, fig.cap="Random Forest Prediction"}
+To visualize the results of the predictions, the code below generates a scatter plot of the Predictor vs Test values (Figure \ref{fig:plot_rf_rw}). Also a QQ-Plot for Studentized Residuals is generated and presented in Figure \ref{fig:qq_rf_rw}.
+
+```{r plot_rf_rw, fig.width=5.5, fig.align="center", message=FALSE, warning=FALSE, paged.print=FALSE, fig.cap="Random Forest Prediction"}
 plot(jitter(test.data$QLT), PredictionRF1 , 
      pch=20, col=rgb(0.1, 0.2, 0.8, 0.3), 
      ylab="Prediction", xlab="Test Values", bty="n" )
 ```
 
-```{r qq_rf_rw, fig.pos='h', fig.width=5.5, fig.align="center", message=FALSE, warning=FALSE, paged.print=FALSE, fig.cap="Random Forest Prediction QQ Plot"}
+```{r qq_rf_rw, fig.width=5.5, fig.align="center", message=FALSE, warning=FALSE, paged.print=FALSE, fig.cap="Random Forest Prediction QQ Plot"}
 qqPlot(PredictionRF1, main="")
 ```
 
 \newpage
-# Conclusion
 
+# Conclusion
+Through exploring the Red Wine Quality dataset and using a different methods of Linear Regression we developed an algorithm to predict the wine quality using its chemical characteristics.
+
+First we applies an OLS and through several steps of correcting the model and adjusting for skewness and then comparing it to automated Stepwise Regression method we achieved the accuracy of RT at 0.5480833 is 50% higher than OLS. 
+
+Next we  applied tree-based regression methods. First we used a Regression Tree which gave us accuracy of 0.5480833. The final method was the Random Forest Regressor and achieved 80% better accuracy at 0.6734 comparing  to OLS. 
+
+The project was a success.
+
+\newpage
 
 \bibliography{RJreferences}
 
-\newpage
 # Note from the Authors
 This file was generated using [_The R Journal_ style article template](https://github.com/rstudio/rticles), additional information on how to prepare articles for submission is here - [Instructions for Authors](https://journal.r-project.org/share/author-guide.pdf). The article itself is an executable R Markdown file that could be [downloaded from Github](https://github.com/ivbsoftware/scda1010-lab1/tree/master/docs/R_Journal/csda1010-lab1lab1) with all the necessary artifacts.
